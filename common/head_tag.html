@@ -1,0 +1,151 @@
+<script type="text/discourse-plugin" version="0.8.31">
+const { withPluginApi } = require("discourse/lib/plugin-api");
+
+function isUrl(text) {
+  if (!text || typeof text !== "string") return false;
+  // Check for common URL patterns
+  return /^(https?:\/\/|www\.)/i.test(text.trim());
+}
+
+function isAlreadyHtml(text) {
+  if (!text || typeof text !== "string") return false;
+  // Check if the text contains HTML anchor tags
+  return /<a\s+[^>]*href=/i.test(text);
+}
+
+function createLinkElement(helper, value, rule) {
+  if (!value) return null;
+
+  const strValue = String(value).trim();
+
+  // If it's already HTML with links, render as-is
+  if (isAlreadyHtml(strValue)) {
+    return helper.rawHtml(strValue);
+  }
+
+  // If it looks like a URL, create a clickable link
+  if (isUrl(strValue)) {
+    let displayText = strValue;
+    let href = strValue;
+
+    // Add protocol if missing
+    if (!/^https?:\/\//i.test(href)) {
+      href = `https://${href}`;
+    }
+
+    // Clean up display text (remove protocol for cleaner display)
+    if (!rule || rule.link_type === "auto") {
+      displayText = strValue.replace(/^https?:\/\//, "").replace(/^www\./, "");
+    }
+
+    const openInNewTab = rule ? rule.open_in_new_tab !== false : true;
+
+    return helper.h("a", {
+      href: href,
+      target: openInNewTab ? "_blank" : null,
+      rel: "noopener noreferrer"
+    }, displayText);
+  }
+
+  // Not a URL, render as plain text
+  return helper.h("span", strValue);
+}
+
+function getFieldRules() {
+  const rules = settings.field_link_rules || [];
+  if (!Array.isArray(rules)) return [];
+
+  // Create a map of field name (lowercase) to rule
+  const ruleMap = new Map();
+  rules.forEach(rule => {
+    if (rule.field_name) {
+      ruleMap.set(rule.field_name.toLowerCase(), rule);
+    }
+  });
+
+  return ruleMap;
+}
+
+function renderCustomFields(helper, user) {
+  if (!user || !user.custom_fields) return null;
+
+  const fieldRules = getFieldRules();
+  if (fieldRules.size === 0) return null;
+
+  const site = helper.site;
+  const userFields = site.get("user_fields");
+  if (!userFields) return null;
+
+  const items = [];
+
+  for (const field of userFields) {
+    const fieldNameLower = field.name.toLowerCase();
+    const rule = fieldRules.get(fieldNameLower);
+
+    if (!rule) continue;
+
+    const fieldValue = user.custom_fields[`user_field_${field.id}`];
+    if (!fieldValue) continue;
+
+    const label = rule.custom_label || field.name;
+    const linkElement = createLinkElement(helper, fieldValue, rule);
+
+    if (linkElement) {
+      items.push(
+        helper.h("div.custom-field-link-item", [
+          helper.h("span.custom-field-label", `${label}: `),
+          linkElement
+        ])
+      );
+    }
+  }
+
+  if (items.length === 0) return null;
+
+  return helper.h("div.custom-field-links", items);
+}
+
+withPluginApi("0.8.31", (api) => {
+  if (settings.show_on_user_card) {
+    api.decorateWidget("user-card-contents:after", (helper) => {
+      const user = helper.getModel();
+      return renderCustomFields(helper, user);
+    });
+  }
+
+  if (settings.show_on_user_profile) {
+    api.decorateWidget("user-profile-primary:after", (helper) => {
+      const user = helper.getModel();
+      return renderCustomFields(helper, user);
+    });
+  }
+});
+</script>
+
+<style>
+.custom-field-links {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--primary-low);
+}
+
+.custom-field-link-item {
+  line-height: 1.6;
+  margin-bottom: 0.25rem;
+}
+
+.custom-field-link-item .custom-field-label {
+  font-weight: 600;
+  margin-right: 4px;
+  color: var(--primary-medium);
+}
+
+.custom-field-link-item a {
+  color: var(--tertiary);
+  text-decoration: none;
+}
+
+.custom-field-link-item a:hover {
+  text-decoration: underline;
+}
+</style>
