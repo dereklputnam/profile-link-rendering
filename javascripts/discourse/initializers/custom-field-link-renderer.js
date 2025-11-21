@@ -109,6 +109,12 @@ function extractAndReplaceUrls(element, settings) {
   });
 }
 
+function unescapeHtml(text) {
+  const tempDiv = document.createElement('div');
+  tempDiv.innerHTML = text;
+  return tempDiv.textContent || tempDiv.innerText || '';
+}
+
 function processUserFieldLinks() {
   const settings = getSettings();
 
@@ -124,15 +130,29 @@ function processUserFieldLinks() {
     if (fieldElement.dataset.linkProcessed) return;
     fieldElement.dataset.linkProcessed = "true";
 
+    // Get the innerHTML to check for escaped HTML entities like &lt;a
+    const innerHTML = fieldElement.innerHTML;
     const textContent = fieldElement.textContent?.trim();
+
     console.log("[Custom Field Links] Processing field:", textContent?.substring(0, 100));
+    console.log("[Custom Field Links] innerHTML contains escaped HTML?", innerHTML.includes('&lt;a'));
 
     if (!textContent) return;
 
-    // First check if the entire text content contains HTML anchor tags
+    // Check if innerHTML contains escaped HTML entities
+    if (innerHTML.includes('&lt;a') || innerHTML.includes('&lt;A')) {
+      console.log("[Custom Field Links] Found escaped HTML, unescaping and rendering");
+      // Unescape the HTML and render it
+      const unescaped = unescapeHtml(innerHTML);
+      if (isAlreadyHtml(unescaped)) {
+        fieldElement.innerHTML = unescaped;
+        return;
+      }
+    }
+
+    // Check if the text content contains HTML anchor tags (not escaped)
     if (isAlreadyHtml(textContent)) {
       console.log("[Custom Field Links] Field contains HTML, rendering it");
-      // The field contains HTML as text, render it as actual HTML
       fieldElement.innerHTML = textContent;
       return;
     }
