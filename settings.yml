@@ -1,36 +1,4 @@
-field_link_rules:
-  type: objects
-  default: []
-  description: "Configure which custom user fields should have their URLs rendered as clickable links"
-  schema:
-    name: field_link_rule
-    properties:
-      field_name:
-        type: string
-        description: "The name of the custom user field (case-insensitive)"
-      link_type:
-        type: enum
-        default: "auto"
-        description: "How to render the link"
-        choices:
-          - auto
-          - url
-          - custom_html
-      custom_label:
-        type: string
-        default: ""
-        description: "Optional: Custom label to display instead of the field name"
-      open_in_new_tab:
-        type: bool
-        default: true
-        description: "Open links in a new tab"
-
-show_on_user_card:
+open_links_in_new_tab:
   type: bool
   default: true
-  description: "Show custom field links on user cards (hover popups)"
-
-show_on_user_profile:
-  type: bool
-  default: true
-  description: "Show custom field links on user profile pages"
+  description: "Open links in a new tab"

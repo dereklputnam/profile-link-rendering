@@ -4,11 +4,10 @@ A Discourse theme component that automatically renders URLs in custom user field
 
 ## Features
 
-- Automatically detects and converts URLs in custom user fields to clickable links
-- Uses Discourse's markdown rendering for consistent styling
+- **Zero configuration** - automatically detects and converts URLs in ALL custom user fields to clickable links
 - Supports both plain URLs and pre-formatted HTML anchor tags
-- Configurable per-field with custom labels
-- Choose whether to display on user cards, profiles, or both
+- Works on user cards and profile pages
+- Clean URL display (removes protocol/www prefix)
 - Open links in new tabs (configurable)
 
 ## Installation
@@ -21,33 +20,9 @@ A Discourse theme component that automatically renders URLs in custom user field
 
 ## Configuration
 
-After installation, go to the theme component's settings:
+The component works automatically with no configuration needed. The only setting available is:
 
-### Field Link Rules
-
-Add rules for each custom user field you want to render as a link:
-
-```yaml
-field_name: LinkedIn
-link_type: auto
-custom_label: LinkedIn Profile
-open_in_new_tab: true
-```
-
-**Settings:**
-
-- **field_name** (required): The name of your custom user field (case-insensitive)
-- **link_type**: How to render the link
-  - `auto`: Automatically detect and render URLs (default)
-  - `url`: Treat field value as a URL
-  - `custom_html`: Field already contains HTML anchor tags
-- **custom_label** (optional): Display a custom label instead of the field name
-- **open_in_new_tab**: Whether to open links in a new tab (default: true)
-
-### Display Options
-
-- **show_on_user_card**: Show links on user cards (hover popups) - default: true
-- **show_on_user_profile**: Show links on user profile pages - default: true
+- **open_links_in_new_tab**: Whether to open links in a new tab (default: true)
 
 ## Example Use Cases
 

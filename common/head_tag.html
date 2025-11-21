@@ -13,7 +13,7 @@ function isAlreadyHtml(text) {
   return /<a\s+[^>]*href=/i.test(text);
 }
 
-function createLinkElement(helper, value, rule) {
+function createLinkElement(helper, value) {
   if (!value) return null;
 
   const strValue = String(value).trim();
@@ -34,11 +34,9 @@ function createLinkElement(helper, value, rule) {
     }
 
     // Clean up display text (remove protocol for cleaner display)
-    if (!rule || rule.link_type === "auto") {
-      displayText = strValue.replace(/^https?:\/\//, "").replace(/^www\./, "");
-    }
+    displayText = strValue.replace(/^https?:\/\//, "").replace(/^www\./, "");
 
-    const openInNewTab = rule ? rule.open_in_new_tab !== false : true;
+    const openInNewTab = settings.open_links_in_new_tab;
 
     return helper.h("a", {
       href: href,
@@ -47,78 +45,53 @@ function createLinkElement(helper, value, rule) {
     }, displayText);
   }
 
-  // Not a URL, render as plain text
-  return helper.h("span", strValue);
-}
-
-function getFieldRules() {
-  const rules = settings.field_link_rules || [];
-  if (!Array.isArray(rules)) return [];
-
-  // Create a map of field name (lowercase) to rule
-  const ruleMap = new Map();
-  rules.forEach(rule => {
-    if (rule.field_name) {
-      ruleMap.set(rule.field_name.toLowerCase(), rule);
-    }
-  });
-
-  return ruleMap;
-}
-
-function renderCustomFields(helper, user) {
-  if (!user || !user.custom_fields) return null;
-
-  const fieldRules = getFieldRules();
-  if (fieldRules.size === 0) return null;
-
-  const site = helper.site;
-  const userFields = site.get("user_fields");
-  if (!userFields) return null;
-
-  const items = [];
-
-  for (const field of userFields) {
-    const fieldNameLower = field.name.toLowerCase();
-    const rule = fieldRules.get(fieldNameLower);
-
-    if (!rule) continue;
-
-    const fieldValue = user.custom_fields[`user_field_${field.id}`];
-    if (!fieldValue) continue;
-
-    const label = rule.custom_label || field.name;
-    const linkElement = createLinkElement(helper, fieldValue, rule);
-
-    if (linkElement) {
-      items.push(
-        helper.h("div.custom-field-link-item", [
-          helper.h("span.custom-field-label", `${label}: `),
-          linkElement
-        ])
-      );
-    }
-  }
-
-  if (items.length === 0) return null;
-
-  return helper.h("div.custom-field-links", items);
+  // Not a URL, return null so default rendering is used
+  return null;
 }
 
 withPluginApi("0.8.31", (api) => {
-  if (settings.show_on_user_card) {
-    api.decorateWidget("user-card-contents:after", (helper) => {
-      const user = helper.getModel();
-      return renderCustomFields(helper, user);
-    });
-  }
+  // Modify the user field value output to convert URLs to links
+  api.modifyClass("component:user-field-value", {
+    pluginId: "custom-field-link-renderer",
 
-  if (settings.show_on_user_profile) {
-    api.decorateWidget("user-profile-primary:after", (helper) => {
-      const user = helper.getModel();
-      return renderCustomFields(helper, user);
-    });
-  }
+    didInsertElement() {
+      this._super(...arguments);
+
+      const valueElement = this.element.querySelector(".user-field-value-text");
+      if (!valueElement) return;
+
+      const value = valueElement.textContent;
+      if (!value) return;
+
+      // Check if it's a URL or already has HTML
+      if (isAlreadyHtml(value)) {
+        valueElement.innerHTML = value;
+      } else if (isUrl(value)) {
+        let href = value.trim();
+        let displayText = href;
+
+        // Add protocol if missing
+        if (!/^https?:\/\//i.test(href)) {
+          href = `https://${href}`;
+        }
+
+        // Clean up display text
+        displayText = displayText.replace(/^https?:\/\//, "").replace(/^www\./, "");
+
+        const openInNewTab = settings.open_links_in_new_tab;
+        const link = document.createElement("a");
+        link.href = href;
+        link.textContent = displayText;
+        link.rel = "noopener noreferrer";
+        if (openInNewTab) {
+          link.target = "_blank";
+        }
+
+        valueElement.innerHTML = "";
+        valueElement.appendChild(link);
+      }
+    }
+  });
 });
 </script>
 
