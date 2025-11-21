@@ -17,6 +17,95 @@ function getSettings() {
   };
 }
 
+function extractAndReplaceUrls(element, settings) {
+  // Get all text nodes within the element
+  const walker = document.createTreeWalker(
+    element,
+    NodeFilter.SHOW_TEXT,
+    null,
+    false
+  );
+
+  const textNodes = [];
+  let node;
+  while ((node = walker.nextNode())) {
+    textNodes.push(node);
+  }
+
+  // Process each text node
+  textNodes.forEach((textNode) => {
+    const text = textNode.textContent;
+
+    // Check if it's already HTML
+    if (isAlreadyHtml(text)) {
+      const temp = document.createElement('div');
+      temp.innerHTML = text;
+      textNode.replaceWith(temp.firstChild);
+      return;
+    }
+
+    // Look for URLs in the text (including those in parentheses)
+    const urlRegex = /(\(?)((https?:\/\/[^\s)]+)|((www\.)[^\s)]+))(\)?)/gi;
+    const matches = [...text.matchAll(urlRegex)];
+
+    if (matches.length > 0) {
+      console.log("[Custom Field Links] Found URLs in text:", text);
+      const fragment = document.createDocumentFragment();
+      let lastIndex = 0;
+
+      matches.forEach((match) => {
+        const fullMatch = match[0];
+        const url = match[2] || match[3];
+        const startParen = match[1] || '';
+        const endParen = match[6] || '';
+
+        // Add text before the URL
+        if (match.index > lastIndex) {
+          fragment.appendChild(
+            document.createTextNode(text.substring(lastIndex, match.index))
+          );
+        }
+
+        // Add opening parenthesis if present
+        if (startParen) {
+          fragment.appendChild(document.createTextNode(startParen));
+        }
+
+        // Create the link
+        let href = url;
+        if (!/^https?:\/\//i.test(href)) {
+          href = `https://${href}`;
+        }
+
+        const displayText = url.replace(/^https?:\/\//, "").replace(/^www\./, "");
+
+        const link = document.createElement("a");
+        link.href = href;
+        link.textContent = displayText;
+        link.rel = "noopener noreferrer";
+        if (settings.openInNewTab) {
+          link.target = "_blank";
+        }
+        fragment.appendChild(link);
+
+        // Add closing parenthesis if present
+        if (endParen) {
+          fragment.appendChild(document.createTextNode(endParen));
+        }
+
+        lastIndex = match.index + fullMatch.length;
+      });
+
+      // Add remaining text
+      if (lastIndex < text.length) {
+        fragment.appendChild(document.createTextNode(text.substring(lastIndex)));
+      }
+
+      textNode.replaceWith(fragment);
+    }
+  });
+}
+
 function processUserFieldLinks() {
   const settings = getSettings();
 
@@ -37,39 +126,8 @@ function processUserFieldLinks() {
 
     if (!textContent) return;
 
-    // If it's already HTML with links, render as-is
-    if (isAlreadyHtml(textContent)) {
-      console.log("[Custom Field Links] Found HTML, rendering as-is");
-      fieldElement.innerHTML = textContent;
-      return;
-    }
-
-    // If it looks like a URL, create a clickable link
-    if (isUrl(textContent)) {
-      console.log("[Custom Field Links] Found URL:", textContent);
-      let href = textContent;
-      let displayText = textContent;
-
-      // Add protocol if missing
-      if (!/^https?:\/\//i.test(href)) {
-        href = `https://${href}`;
-      }
-
-      // Clean up display text
-      displayText = displayText.replace(/^https?:\/\//, "").replace(/^www\./, "");
-
-      const link = document.createElement("a");
-      link.href = href;
-      link.textContent = displayText;
-      link.rel = "noopener noreferrer";
-      if (settings.openInNewTab) {
-        link.target = "_blank";
-      }
-
-      fieldElement.innerHTML = "";
-      fieldElement.appendChild(link);
-      console.log("[Custom Field Links] Created link:", link.href);
-    }
+    // Extract and replace URLs within the element
+    extractAndReplaceUrls(fieldElement, settings);
   });
 }
 
