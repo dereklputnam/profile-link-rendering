@@ -1,124 +1,13 @@
-<script type="text/discourse-plugin" version="0.8.31">
-const { withPluginApi } = require("discourse/lib/plugin-api");
-
-function isUrl(text) {
-  if (!text || typeof text !== "string") return false;
-  // Check for common URL patterns
-  return /^(https?:\/\/|www\.)/i.test(text.trim());
-}
-
-function isAlreadyHtml(text) {
-  if (!text || typeof text !== "string") return false;
-  // Check if the text contains HTML anchor tags
-  return /<a\s+[^>]*href=/i.test(text);
-}
-
-function createLinkElement(helper, value) {
-  if (!value) return null;
-
-  const strValue = String(value).trim();
-
-  // If it's already HTML with links, render as-is
-  if (isAlreadyHtml(strValue)) {
-    return helper.rawHtml(strValue);
-  }
-
-  // If it looks like a URL, create a clickable link
-  if (isUrl(strValue)) {
-    let displayText = strValue;
-    let href = strValue;
-
-    // Add protocol if missing
-    if (!/^https?:\/\//i.test(href)) {
-      href = `https://${href}`;
-    }
-
-    // Clean up display text (remove protocol for cleaner display)
-    displayText = strValue.replace(/^https?:\/\//, "").replace(/^www\./, "");
-
-    const openInNewTab = settings.open_links_in_new_tab;
-
-    return helper.h("a", {
-      href: href,
-      target: openInNewTab ? "_blank" : null,
-      rel: "noopener noreferrer"
-    }, displayText);
-  }
-
-  // Not a URL, return null so default rendering is used
-  return null;
-}
-
-withPluginApi("0.8.31", (api) => {
-  // Modify the user field value output to convert URLs to links
-  api.modifyClass("component:user-field-value", {
-    pluginId: "custom-field-link-renderer",
-
-    didInsertElement() {
-      this._super(...arguments);
-
-      const valueElement = this.element.querySelector(".user-field-value-text");
-      if (!valueElement) return;
-
-      const value = valueElement.textContent;
-      if (!value) return;
-
-      // Check if it's a URL or already has HTML
-      if (isAlreadyHtml(value)) {
-        valueElement.innerHTML = value;
-      } else if (isUrl(value)) {
-        let href = value.trim();
-        let displayText = href;
-
-        // Add protocol if missing
-        if (!/^https?:\/\//i.test(href)) {
-          href = `https://${href}`;
-        }
-
-        // Clean up display text
-        displayText = displayText.replace(/^https?:\/\//, "").replace(/^www\./, "");
-
-        const openInNewTab = settings.open_links_in_new_tab;
-        const link = document.createElement("a");
-        link.href = href;
-        link.textContent = displayText;
-        link.rel = "noopener noreferrer";
-        if (openInNewTab) {
-          link.target = "_blank";
-        }
-
-        valueElement.innerHTML = "";
-        valueElement.appendChild(link);
-      }
-    }
-  });
-});
-</script>
-
 <style>
-.custom-field-links {
-  margin-top: 0.5rem;
-  padding-top: 0.5rem;
-  border-top: 1px solid var(--primary-low);
-}
-
-.custom-field-link-item {
-  line-height: 1.6;
-  margin-bottom: 0.25rem;
-}
-
-.custom-field-link-item .custom-field-label {
-  font-weight: 600;
-  margin-right: 4px;
-  color: var(--primary-medium);
-}
-
-.custom-field-link-item a {
+/* Custom styling for user field links */
+.user-field-value a,
+.public-user-field a {
   color: var(--tertiary);
   text-decoration: none;
 }
 
-.custom-field-link-item a:hover {
+.user-field-value a:hover,
+.public-user-field a:hover {
   text-decoration: underline;
 }
 </style>
