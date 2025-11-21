@@ -47,7 +47,51 @@ function extractAndReplaceUrls(element, settings) {
       return;
     }
 
-    // Look for URLs in the text (including those in parentheses)
+    // Look for markdown-style links: [Text](URL) or just (URL)
+    const markdownLinkRegex = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g;
+    const markdownMatches = [...text.matchAll(markdownLinkRegex)];
+
+    // If we found markdown-style links, process them
+    if (markdownMatches.length > 0) {
+      console.log("[Custom Field Links] Found markdown-style links in text:", text);
+      const fragment = document.createDocumentFragment();
+      let lastIndex = 0;
+
+      markdownMatches.forEach((match) => {
+        const fullMatch = match[0];
+        const linkText = match[1];
+        const url = match[2];
+
+        // Add text before the link
+        if (match.index > lastIndex) {
+          fragment.appendChild(
+            document.createTextNode(text.substring(lastIndex, match.index))
+          );
+        }
+
+        // Create the link with custom text
+        const link = document.createElement("a");
+        link.href = url;
+        link.textContent = linkText;
+        link.rel = "noopener noreferrer";
+        if (settings.openInNewTab) {
+          link.target = "_blank";
+        }
+        fragment.appendChild(link);
+
+        lastIndex = match.index + fullMatch.length;
+      });
+
+      // Add remaining text
+      if (lastIndex < text.length) {
+        fragment.appendChild(document.createTextNode(text.substring(lastIndex)));
+      }
+
+      textNode.replaceWith(fragment);
+      return;
+    }
+
+    // Look for plain URLs in the text (including those in parentheses)
     const urlRegex = /(\(?)((https?:\/\/[^\s)]+)|((www\.)[^\s)]+))(\)?)/gi;
     const matches = [...text.matchAll(urlRegex)];
 
