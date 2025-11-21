@@ -19,13 +19,7 @@ function isAlreadyHtml(text) {
   return /<a\s+[^>]*href=/i.test(text);
 }
 
-// Get theme settings
-function getSettings() {
-  const siteSettings = window.Discourse?.SiteSettings || {};
-  return {
-    openInNewTab: siteSettings.open_links_in_new_tab !== false
-  };
-}
+// Get theme settings (passed as parameter to avoid deprecated API)
 
 // Extract URLs from text nodes and replace them with clickable links
 function extractAndReplaceUrls(element, settings) {
@@ -165,8 +159,8 @@ function unescapeHtml(text) {
   return tempDiv.textContent || tempDiv.innerText || '';
 }
 
-function processUserFieldLinks() {
-  const settings = getSettings();
+function processUserFieldLinks(openInNewTab) {
+  const settings = { openInNewTab };
 
   // Find all user field value containers - try multiple selectors
   const fieldElements = document.querySelectorAll(
@@ -206,19 +200,23 @@ function processUserFieldLinks() {
 export default {
   name: "custom-field-link-renderer",
 
-  initialize() {
+  initialize(container) {
     withPluginApi("0.8.31", (api) => {
+      // Get settings from the container (proper way, not deprecated)
+      const siteSettings = container.lookup("service:site-settings");
+      const openInNewTab = siteSettings.open_links_in_new_tab !== false;
+
       // Process fields when the DOM is ready
       api.onPageChange(() => {
         // Small delay to ensure DOM is fully rendered
         setTimeout(() => {
-          processUserFieldLinks();
+          processUserFieldLinks(openInNewTab);
         }, 100);
       });
 
       // Use MutationObserver to catch dynamically added user fields
       const observer = new MutationObserver(() => {
-        processUserFieldLinks();
+        processUserFieldLinks(openInNewTab);
       });
 
       // Start observing after a short delay to let the page initialize
