@@ -4,11 +4,15 @@ A Discourse theme component that automatically renders URLs in custom user field
 
 ## Features
 
-- **Zero configuration** - automatically detects and converts URLs in ALL custom user fields to clickable links
-- Supports both plain URLs and pre-formatted HTML anchor tags
+- **Zero configuration** - works automatically on all custom user fields
+- **Multiple link formats supported**:
+  - Plain URLs: `https://example.com`
+  - URLs with www: `www.example.com`
+  - Markdown-style links: `[Link Text](https://example.com)`
+  - HTML anchor tags (escaped or raw): `<a href="...">Text</a>`
+- Clean URL display (removes protocol/www prefix for plain URLs)
 - Works on user cards and profile pages
-- Clean URL display (removes protocol/www prefix)
-- Open links in new tabs (configurable)
+- Configurable new tab behavior
 
 ## Installation
 
@@ -24,47 +28,59 @@ The component works automatically with no configuration needed. The only setting
 
 - **open_links_in_new_tab**: Whether to open links in a new tab (default: true)
 
-## Example Use Cases
+## Supported Formats
 
-### Social Media Links
-
-If you have custom fields for LinkedIn, Twitter, GitHub, etc., this component will automatically make them clickable:
+### Plain URLs
 
 ```
-Field Name: LinkedIn
 Field Value: https://linkedin.com/in/username
-Result: Clickable link "linkedin.com/in/username"
+Result: Clickable link displaying "linkedin.com/in/username"
 ```
 
-### Company Websites
+### Markdown-Style Links
+
+Perfect for custom text with URLs:
 
 ```
-Field Name: Company Website
-Field Value: https://www.example.com
-Result: Clickable link "www.example.com"
+Field Value: [View Profile](https://example.com/profile)
+Result: Clickable link displaying "View Profile"
 ```
 
-### Pre-formatted HTML
+### HTML Anchor Tags
 
-If your field already contains HTML (e.g., from automation):
+If your automation tool outputs HTML (like Salesforce, Zapier, etc.):
 
 ```
-Field Value: <a href="https://example.com">View Profile</a>
-Result: Renders the HTML as-is
+Field Value: <a href="https://example.com">Company Name</a>
+Result: Clickable link displaying "Company Name"
+```
+
+### URLs in Parentheses
+
+```
+Field Value: (https://example.com)
+Result: Clickable link with parentheses preserved
 ```
 
 ## How It Works
 
-1. The component scans configured custom user fields
-2. Detects URLs using pattern matching (http://, https://, www.)
-3. Converts URLs to markdown links
-4. Renders using Discourse's markdown engine for consistency
-5. Displays on user cards and/or profiles based on settings
+The component automatically:
+1. Monitors all custom user field displays on user cards and profile pages
+2. Detects various URL formats (plain URLs, markdown links, HTML tags)
+3. Converts them to properly formatted, clickable HTML links
+4. Preserves surrounding text and formatting
+
+## Use Cases
+
+- **CRM Integration**: Display Salesforce, HubSpot, or other CRM links with custom text
+- **Social Media Profiles**: Make LinkedIn, Twitter, GitHub profiles clickable
+- **Company Information**: Link to company websites or internal resources
+- **Documentation**: Link to external documentation or support pages
 
 ## Compatibility
 
 - **Minimum Discourse Version**: 2.8.0
-- Works with the [discourse-hidden-user-fields](https://github.com/dereklputnam/discourse-hidden-user-fields) component for combined visibility control and link rendering
+- Works with other theme components like [discourse-hidden-user-fields](https://github.com/dereklputnam/discourse-hidden-user-fields) for combined visibility control and link rendering
 
 ## License
 

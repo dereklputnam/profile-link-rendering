@@ -1,15 +1,25 @@
+/**
+ * Custom User Field Link Renderer
+ *
+ * Automatically converts URLs in custom user fields to clickable links.
+ * Supports multiple formats: plain URLs, markdown links, and HTML anchor tags.
+ */
+
 import { withPluginApi } from "discourse/lib/plugin-api";
 
+// Check if text starts with a URL
 function isUrl(text) {
   if (!text || typeof text !== "string") return false;
   return /^(https?:\/\/|www\.)/i.test(text.trim());
 }
 
+// Check if text contains HTML anchor tags
 function isAlreadyHtml(text) {
   if (!text || typeof text !== "string") return false;
   return /<a\s+[^>]*href=/i.test(text);
 }
 
+// Get theme settings
 function getSettings() {
   const siteSettings = window.Discourse?.SiteSettings || {};
   return {
@@ -17,6 +27,7 @@ function getSettings() {
   };
 }
 
+// Extract URLs from text nodes and replace them with clickable links
 function extractAndReplaceUrls(element, settings) {
   // Get all text nodes within the element
   const walker = document.createTreeWalker(
@@ -36,24 +47,20 @@ function extractAndReplaceUrls(element, settings) {
   textNodes.forEach((textNode) => {
     const text = textNode.textContent;
 
-    console.log("[Custom Field Links] Text node content:", text);
-
     // Check if it's already HTML
     if (isAlreadyHtml(text)) {
-      console.log("[Custom Field Links] Detected HTML in text node");
       const temp = document.createElement('div');
       temp.innerHTML = text;
       textNode.replaceWith(temp.firstChild);
       return;
     }
 
-    // Look for markdown-style links: [Text](URL) or just (URL)
+    // Look for markdown-style links: [Text](URL)
     const markdownLinkRegex = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g;
     const markdownMatches = [...text.matchAll(markdownLinkRegex)];
 
     // If we found markdown-style links, process them
     if (markdownMatches.length > 0) {
-      console.log("[Custom Field Links] Found markdown-style links in text:", text);
       const fragment = document.createDocumentFragment();
       let lastIndex = 0;
 
@@ -96,7 +103,6 @@ function extractAndReplaceUrls(element, settings) {
     const matches = [...text.matchAll(urlRegex)];
 
     if (matches.length > 0) {
-      console.log("[Custom Field Links] Found URLs in text:", text);
       const fragment = document.createDocumentFragment();
       let lastIndex = 0;
 
@@ -167,26 +173,18 @@ function processUserFieldLinks() {
     ".user-field-value, .public-user-field, .user-profile-fields .value, .user-card-additional-controls .user-field"
   );
 
-  console.log("[Custom Field Links] Found", fieldElements.length, "field elements");
-
   fieldElements.forEach((fieldElement) => {
     // Skip if already processed
     if (fieldElement.dataset.linkProcessed) return;
     fieldElement.dataset.linkProcessed = "true";
 
-    // Get the innerHTML to check for escaped HTML entities like &lt;a
     const innerHTML = fieldElement.innerHTML;
     const textContent = fieldElement.textContent?.trim();
 
-    console.log("[Custom Field Links] Processing field:", textContent?.substring(0, 100));
-    console.log("[Custom Field Links] innerHTML contains escaped HTML?", innerHTML.includes('&lt;a'));
-
     if (!textContent) return;
 
-    // Check if innerHTML contains escaped HTML entities
+    // Check if innerHTML contains escaped HTML entities (&lt;a becomes <a)
     if (innerHTML.includes('&lt;a') || innerHTML.includes('&lt;A')) {
-      console.log("[Custom Field Links] Found escaped HTML, unescaping and rendering");
-      // Unescape the HTML and render it
       const unescaped = unescapeHtml(innerHTML);
       if (isAlreadyHtml(unescaped)) {
         fieldElement.innerHTML = unescaped;
@@ -196,7 +194,6 @@ function processUserFieldLinks() {
 
     // Check if the text content contains HTML anchor tags (not escaped)
     if (isAlreadyHtml(textContent)) {
-      console.log("[Custom Field Links] Field contains HTML, rendering it");
       fieldElement.innerHTML = textContent;
       return;
     }
