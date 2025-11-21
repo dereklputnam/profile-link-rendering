@@ -125,11 +125,19 @@ function processUserFieldLinks() {
     fieldElement.dataset.linkProcessed = "true";
 
     const textContent = fieldElement.textContent?.trim();
-    console.log("[Custom Field Links] Processing field:", textContent?.substring(0, 50));
+    console.log("[Custom Field Links] Processing field:", textContent?.substring(0, 100));
 
     if (!textContent) return;
 
-    // Extract and replace URLs within the element
+    // First check if the entire text content contains HTML anchor tags
+    if (isAlreadyHtml(textContent)) {
+      console.log("[Custom Field Links] Field contains HTML, rendering it");
+      // The field contains HTML as text, render it as actual HTML
+      fieldElement.innerHTML = textContent;
+      return;
+    }
+
+    // Otherwise, extract and replace URLs within the element
     extractAndReplaceUrls(fieldElement, settings);
   });
 }
