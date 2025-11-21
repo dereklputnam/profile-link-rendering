@@ -25,22 +25,28 @@ function processUserFieldLinks() {
     ".user-field-value, .public-user-field, .user-profile-fields .value, .user-card-additional-controls .user-field"
   );
 
+  console.log("[Custom Field Links] Found", fieldElements.length, "field elements");
+
   fieldElements.forEach((fieldElement) => {
     // Skip if already processed
     if (fieldElement.dataset.linkProcessed) return;
     fieldElement.dataset.linkProcessed = "true";
 
     const textContent = fieldElement.textContent?.trim();
+    console.log("[Custom Field Links] Processing field:", textContent?.substring(0, 50));
+
     if (!textContent) return;
 
     // If it's already HTML with links, render as-is
     if (isAlreadyHtml(textContent)) {
+      console.log("[Custom Field Links] Found HTML, rendering as-is");
       fieldElement.innerHTML = textContent;
       return;
     }
 
     // If it looks like a URL, create a clickable link
     if (isUrl(textContent)) {
+      console.log("[Custom Field Links] Found URL:", textContent);
       let href = textContent;
       let displayText = textContent;
 
@@ -62,6 +68,7 @@ function processUserFieldLinks() {
 
       fieldElement.innerHTML = "";
       fieldElement.appendChild(link);
+      console.log("[Custom Field Links] Created link:", link.href);
     }
   });
 }
