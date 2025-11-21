@@ -21,16 +21,16 @@ field_link_rules:
         default: ""
         description: "Optional: Custom label to display instead of the field name"
       open_in_new_tab:
-        type: boolean
+        type: bool
         default: true
         description: "Open links in a new tab"
 
 show_on_user_card:
-  type: boolean
+  type: bool
   default: true
   description: "Show custom field links on user cards (hover popups)"
 
 show_on_user_profile:
-  type: boolean
+  type: bool
   default: true
   description: "Show custom field links on user profile pages"
