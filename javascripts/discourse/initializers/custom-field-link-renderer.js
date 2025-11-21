@@ -36,8 +36,11 @@ function extractAndReplaceUrls(element, settings) {
   textNodes.forEach((textNode) => {
     const text = textNode.textContent;
 
+    console.log("[Custom Field Links] Text node content:", text);
+
     // Check if it's already HTML
     if (isAlreadyHtml(text)) {
+      console.log("[Custom Field Links] Detected HTML in text node");
       const temp = document.createElement('div');
       temp.innerHTML = text;
       textNode.replaceWith(temp.firstChild);
