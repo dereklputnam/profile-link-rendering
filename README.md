@@ -1,4 +1,4 @@
-# Custom User Field Link Renderer
+# User Field Link Rendering
 
 A Discourse theme component that automatically renders URLs in custom user fields as clickable links on user cards and profile pages.
 

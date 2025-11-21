@@ -1,5 +1,5 @@
 {
-  "name": "Custom User Field Link Renderer",
+  "name": "User Field Link Rendering",
   "component": true,
   "about_url": "https://github.com/dereklputnam/profile-link-rendering",
   "license_url": "https://opensource.org/licenses/MIT",

@@ -1,5 +1,5 @@
 /**
- * Custom User Field Link Renderer
+ * User Field Link Rendering
  *
  * Automatically converts URLs in custom user fields to clickable links.
  * Supports multiple formats: plain URLs, markdown links, and HTML anchor tags.
