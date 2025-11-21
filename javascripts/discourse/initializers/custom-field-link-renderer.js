@@ -10,11 +10,20 @@ function isAlreadyHtml(text) {
   return /<a\s+[^>]*href=/i.test(text);
 }
 
-function processUserFieldLinks(container) {
-  const openInNewTab = container.lookup("service:site-settings").open_links_in_new_tab;
+function getSettings() {
+  const siteSettings = window.Discourse?.SiteSettings || {};
+  return {
+    openInNewTab: siteSettings.open_links_in_new_tab !== false
+  };
+}
 
-  // Find all user field value containers
-  const fieldElements = container.querySelectorAll(".user-field-value, .public-user-field");
+function processUserFieldLinks() {
+  const settings = getSettings();
+
+  // Find all user field value containers - try multiple selectors
+  const fieldElements = document.querySelectorAll(
+    ".user-field-value, .public-user-field, .user-profile-fields .value, .user-card-additional-controls .user-field"
+  );
 
   fieldElements.forEach((fieldElement) => {
     // Skip if already processed
@@ -47,7 +56,7 @@ function processUserFieldLinks(container) {
       link.href = href;
       link.textContent = displayText;
       link.rel = "noopener noreferrer";
-      if (openInNewTab) {
+      if (settings.openInNewTab) {
         link.target = "_blank";
       }
 
@@ -60,49 +69,28 @@ function processUserFieldLinks(container) {
 export default {
   name: "custom-field-link-renderer",
 
-  initialize(container) {
+  initialize() {
     withPluginApi("0.8.31", (api) => {
-      // Process links after user card is shown
-      api.decorateWidget("user-card-contents:after", (helper) => {
-        // Use setTimeout to ensure DOM is ready
+      // Process fields when the DOM is ready
+      api.onPageChange(() => {
+        // Small delay to ensure DOM is fully rendered
         setTimeout(() => {
-          const userCard = document.querySelector(".user-card");
-          if (userCard) {
-            processUserFieldLinks(userCard);
-          }
+          processUserFieldLinks();
         }, 100);
       });
 
-      // Process links on user profile page
-      api.decorateWidget("user-profile-primary:after", (helper) => {
-        setTimeout(() => {
-          const profileArea = document.querySelector(".user-main");
-          if (profileArea) {
-            processUserFieldLinks(profileArea);
-          }
-        }, 100);
+      // Use MutationObserver to catch dynamically added user fields
+      const observer = new MutationObserver(() => {
+        processUserFieldLinks();
       });
 
-      // Also use MutationObserver to catch any dynamically added user fields
-      const observer = new MutationObserver((mutations) => {
-        mutations.forEach((mutation) => {
-          mutation.addedNodes.forEach((node) => {
-            if (node.nodeType === 1) {
-              // Check if the node itself or its children contain user fields
-              if (node.classList?.contains("user-field-value") ||
-                  node.classList?.contains("public-user-field") ||
-                  node.querySelector?.(".user-field-value, .public-user-field")) {
-                processUserFieldLinks(node.closest(".user-card, .user-main") || document);
-              }
-            }
-          });
+      // Start observing after a short delay to let the page initialize
+      setTimeout(() => {
+        observer.observe(document.body, {
+          childList: true,
+          subtree: true
         });
-      });
-
-      observer.observe(document.body, {
-        childList: true,
-        subtree: true
-      });
+      }, 500);
     });
   }
 };
